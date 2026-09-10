@@ -104,6 +104,14 @@ exports.updateTasks = async (req, res) => {
 
         }
 
+        /*if (name !== undefined) {
+
+            if (name.trim().length === 0 || name < 3 || name > 100) {
+                res.status(400)
+            }
+
+        }*/
+
         if (priority && !validPriority.includes(priority)) {
 
             return res.status(400).json({ message: 'Error: Las prioridades disponibles son low, medium, high'})
@@ -122,7 +130,6 @@ exports.updateTasks = async (req, res) => {
         }
 
         const result = await updateTasksStatus(id, name, description, priority, status)
-
 
         if (!result) {
 

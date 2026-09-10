@@ -16,10 +16,45 @@ async function statusUpdate (){
     
 }
 
-async function updateTasksStatus (id, status){
+async function updateTasksStatus (id, name, description, priority, status){
     try {
 
-        const result = await pool.query('UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *', [status, id])
+        const fields = []
+        const values = []
+
+        if (name !== undefined && name!== null) {
+
+            fields.push(`name = $${values.length + 1}`)
+            values.push(name)
+
+        }
+
+        if (description !== undefined && description!== null) {
+
+            fields.push(`description = $${values.length + 1}`)
+            values.push(description)
+
+        }
+
+        if (priority !== undefined && priority!== null) {
+
+            fields.push(`priority = $${values.length + 1}`)
+            values.push(priority)
+
+        }
+    
+        if (status !== undefined && status!== null) {
+
+            fields.push(`status = $${values.length + 1}`)
+            values.push(status)
+
+        }
+
+        values.push(id)
+
+        const query = (`UPDATE tasks SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING *`)
+
+        const result = await pool.query(query, values)
 
         return result.rows[0]
 
@@ -48,3 +83,22 @@ async function deleteTaskId(id) {
 
 
 module.exports = { statusUpdate, updateTasksStatus, deleteTaskId }
+
+
+
+//VERSIÓN 1 updateTasksStatus
+/*async function updateTasksStatus (id, name, description, priority, status){
+    try {
+
+        console.log(id, name, description, priority, status)
+
+        const result = await pool.query('UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *', [status, id])
+
+        return result.rows[0]
+
+    } catch (error){
+
+        throw error
+    }
+    
+}*/
