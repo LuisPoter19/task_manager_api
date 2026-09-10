@@ -104,13 +104,35 @@ exports.updateTasks = async (req, res) => {
 
         }
 
-        /*if (name !== undefined) {
+        if (name !== undefined) {
 
-            if (name.trim().length === 0 || name < 3 || name > 100) {
-                res.status(400)
+            if (typeof name !== "string") {
+                console.log("nombre", name)
+
+                return res.status(400).json({ message: 'Error: El campo name debe contener solo caracteres'})
             }
 
-        }*/
+            if (name.trim().length < 3 || name.trim().length > 100) {
+                console.log("nombre2", name)
+                return res.status(400).json({ message: 'Error: El campo name no puede estar vacio, minimo 3 caracteres, maximo 100'})
+            }
+
+        }
+
+        if (description !== undefined) {
+
+            if (typeof description !== "string") {
+
+                return res.status(400).json({ message: 'Error: El campo description debe contener solo caracteres'})
+
+            }
+
+            if (description.trim().length < 5 || description.trim().length > 255) {
+
+                return res.status(400).json({ message: 'Error: El campo description no puede estar vacio, minimo 5 caracteres, maximo 255'})
+            }
+
+        }
 
         if (priority && !validPriority.includes(priority)) {
 
