@@ -1,5 +1,39 @@
 const pool = require('../config/db')
 
+async function getTasksService (status) {
+    try {
+        if (!status) {
+            const result = await pool.query('SELECT * FROM tasks')
+            return result.rows
+
+        } 
+
+        const result = await pool.query('SELECT * FROM tasks WHERE status = $1', [status])
+        return result.rows
+        
+
+    } catch (error) {
+
+        throw error
+    }
+
+}
+
+async function createTasksService (name, description, duration_days, dueDate, priority) {
+
+    try {
+        const result = await pool.query('INSERT INTO tasks (name, description, duration_days, due_date, priority) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [name, description, duration_days, dueDate, priority])
+
+        return result.rows[0]
+
+    } catch (error) {
+
+        throw error
+    }
+
+}
+
 async function statusUpdate (){
     try {
 
@@ -82,7 +116,7 @@ async function deleteTaskId(id) {
 }
 
 
-module.exports = { statusUpdate, updateTasksStatus, deleteTaskId }
+module.exports = { getTasksService, createTasksService, statusUpdate, updateTasksStatus, deleteTaskId }
 
 
 

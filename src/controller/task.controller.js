@@ -1,35 +1,35 @@
-const pool = require('../config/db')
-const {updateTasksStatus, deleteTaskId} = require('../services/tasks.service') 
+const {getTasksService, createTasksService, updateTasksStatus, deleteTaskId} = require('../services/tasks.service') 
 
-exports.getTasks = async (req, res) => {
+exports.getTasks = async (req, res, next) => {
     try {
         const status = req.query.status
 
-        if (!status) {
-            const result = await pool.query('SELECT * FROM tasks')
-            res.json(result.rows)
-        } else {
-            const validStatuses = ['pending', 'in_progress', 'completed', 'incomplete']
-
-            if (validStatuses.includes(status)) {
-                const result = await pool.query('SELECT * FROM tasks WHERE status = $1', [status])
-                res.json(result.rows)
-            } else {
-                return res.status(400).json({ message: 'Estado no válido. Los estados permitidos son pending, in_progress, completed e incomplete'})
-            }         
+        if (status === undefined) {
+            const result = await getTasksService()
+            return res.status(200).json(result)
         }
 
+        const validStatuses = ['pending', 'in_progress', 'completed', 'incomplete']
+
+        if (validStatuses.includes(status)) {
+
+            const result = await getTasksService(status)
+            return res.status(200).json(result)
+
+        } else {
+            return res.status(400).json({ message: 'Estado no válido. Los estados permitidos son pending, in_progress, completed e incomplete'})
+        }
+
+
     }catch(error) {
-        console.error(error.message)
-        return res.status(500).json({
-            message: 'Error al obtener las tareas'
-        })
+
+        return next(error)
 
     }
     
 } 
 
-exports.createTasks = async (req, res) => {
+exports.createTasks = async (req, res, next) => {
     try{
         const { name, description, duration_days, priority } = req.body
 
@@ -70,23 +70,28 @@ exports.createTasks = async (req, res) => {
 
         dueDate.setDate(createdAt.getDate() + duration_days)
 
-        const result = await pool.query('INSERT INTO tasks (name, description, duration_days, due_date, priority) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        /*const result = await pool.query('INSERT INTO tasks (name, description, duration_days, due_date, priority) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [
                 name, description, duration_days, dueDate, priority
             ]
         )
 
-        res.status(201).json(result.rows[0])
+        res.status(201).json(result.rows[0])*/
+
+        const result = await createTasksService(name, description, duration_days, dueDate, priority)
+
+        return res.status(201).json(result)
 
     }catch(error) {
-        console.error(error.message)
+        //console.error(error.message)
 
-        return res.status(500).json({ message: 'Error interno del servidor' })
+        //return res.status(500).json({ message: 'Error interno del servidor' })
+        return next(error)
     }
     
 }
 
-exports.updateTasks = async (req, res) => {
+exports.updateTasks = async (req, res, next) => {
     try {
 
         const id = Number(req.params.id)
@@ -161,13 +166,14 @@ exports.updateTasks = async (req, res) => {
          return res.status(200).json(result)
 
     } catch (error) {
-        console.error(error.message)
+        //console.error(error.message)
 
-        return res.status(500).json({ message: 'Error al actualizar la tarea' })
+        //return res.status(500).json({ message: 'Error al actualizar la tarea' })
+        return next(error)
     }
 }
 
-exports.deleteTasks = async (req, res) => {
+exports.deleteTasks = async (req, res, next) => {
     try {
         const id = Number(req.params.id)
 
@@ -188,9 +194,10 @@ exports.deleteTasks = async (req, res) => {
         return res.status(200).json({ message: 'Tarea eliminada correctamente', result })
 
     } catch (error) {
-        console.log(error.message)
+        //console.log(error.message)
 
-        return res.status(500).json( { message: 'Error: Ocurrio un problema inesperado'})
+        //return res.status(500).json( { message: 'Error: Ocurrio un problema inesperado'})
+        return next(error)
     }
 
 }
@@ -269,4 +276,35 @@ exports.deleteTasks = async (req, res) => {
 
         return res.status(500).json({ message: 'Error al actualizar la tarea' })
     }
+}*/
+
+
+//PRIMERA VERSIÓN DE GETTASKS
+/*exports.getTasks = async (req, res, next) => {
+    try {
+        const status = req.query.status
+
+        if (!status) {
+            const result = await pool.query('SELECT * FROM tasks')
+            return res.json(result.rows)
+        } else {
+            const validStatuses = ['', 'pending', 'in_progress', 'completed', 'incomplete']
+
+            if (validStatuses.includes(status)) {
+                const result = await pool.query('SELECT * FROM tasks WHERE status = $1', [status])
+                return res.json(result.rows)
+            } else {
+                return res.status(400).json({ message: 'Estado no válido. Los estados permitidos son pending, in_progress, completed e incomplete'})
+            }         
+        }
+
+    }catch(error) {
+        console.error(error.message)
+        return res.status(500).json({
+            message: 'Error al obtener las tareas'     })
+
+        
+
+    }
+    
 }*/
