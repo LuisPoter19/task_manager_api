@@ -1,4 +1,5 @@
 const {getTasksService, createTasksService, updateTasksStatus, deleteTaskId} = require('../services/tasks.service') 
+const { validateName, validateDescription, validateDurationDays, validatePriority , validateStatus } = require('../validators/task.validator')
 
 exports.getTasks = async (req, res, next) => {
     try {
@@ -33,36 +34,28 @@ exports.createTasks = async (req, res, next) => {
     try{
         const { name, description, duration_days, priority } = req.body
 
-        if (!name || name.trim().length === 0) {
+        if (!validateName(name, true)) {
 
-            console.log('Nombre obligatorio')
-            
-            return res.status(400).json({ message: 'El nombre es obligatorio' })
+             return res.status(400).json({ message: 'Error: El nombre debe tener entre 3 y 100 caracteres' })
 
         }
 
-        if (name.trim().length < 3 || name.trim().length > 100) {
-            return res.status(400).json({ message: 'El nombre debe tener entre 3 y 100 caracteres' })
+        if (!validateDescription(description, true)) {
+
+            return res.status(400).json({ message: 'Error: La descripción debe tener entre 5 y 255 caracteres' })
         }
 
-        if (!description || description.trim().length === 0) {
-            return res.status(400).json({ message: 'La descripción es obligarotia' })
-        } 
+        if (!validateDurationDays(duration_days, true)) {
 
-        if (description.trim().length < 5 || description.trim().length > 255) {
-            return res.status(400).json({ message: 'La descripción debe tener entre 5 y 255 caracteres' })
+             return res.status(400).json({ message: 'Error:La duración de días es obligarotio. Comprueba qué sea un número, sea entero y mayor a 0'})
 
         }
 
-        if (!duration_days || typeof duration_days !== 'number' || !Number.isInteger(duration_days) || duration_days <= 0) {
-            return res.status(400).json({ message: 'Error:La duración de días es obligarotio. Comprueba qué sea un número, sea entero y mayor a 0'})
-        }
 
-        const validPriorities = ['low', 'medium', 'high']
+        if (!validatePriority(priority, true)) {
 
-        if (!validPriorities.includes(priority)) {
             return res.status(400).json({ message: 'Error: Las prioridades disponibles son low, medium, high' })
-
+        
         }
 
         const createdAt = new Date()
@@ -70,22 +63,12 @@ exports.createTasks = async (req, res, next) => {
 
         dueDate.setDate(createdAt.getDate() + duration_days)
 
-        /*const result = await pool.query('INSERT INTO tasks (name, description, duration_days, due_date, priority) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [
-                name, description, duration_days, dueDate, priority
-            ]
-        )
-
-        res.status(201).json(result.rows[0])*/
-
         const result = await createTasksService(name, description, duration_days, dueDate, priority)
 
         return res.status(201).json(result)
 
     }catch(error) {
-        //console.error(error.message)
-
-        //return res.status(500).json({ message: 'Error interno del servidor' })
+    
         return next(error)
     }
     
@@ -97,62 +80,38 @@ exports.updateTasks = async (req, res, next) => {
         const id = Number(req.params.id)
         const {name, description, priority, status} = req.body
 
-        console.log(id)
-        console.log(status)
-
-        const validPriority= ["low", "medium", "high"]
-        const validStatus = ["pending", "in_progress", "completed", "incomplete"]
-
-        if (!name && !description && !priority && !status) {
+        if (name === undefined && description === undefined && priority === undefined && status === undefined) {
 
             return res.status(400).json({ message: 'Error: No hay ningún campo para modificar' })
 
         }
 
-        if (name !== undefined) {
+        if (!validateName(name)) {
 
-            if (typeof name !== "string") {
-                console.log("nombre", name)
-
-                return res.status(400).json({ message: 'Error: El campo name debe contener solo caracteres'})
-            }
-
-            if (name.trim().length < 3 || name.trim().length > 100) {
-                console.log("nombre2", name)
-                return res.status(400).json({ message: 'Error: El campo name no puede estar vacio, minimo 3 caracteres, maximo 100'})
-            }
+            return res.status(400).json({ message: 'Error: El nombre debe tener entre 3 y 100 caracteres' })
 
         }
 
-        if (description !== undefined) {
+        if (!validateDescription(description)) {
 
-            if (typeof description !== "string") {
-
-                return res.status(400).json({ message: 'Error: El campo description debe contener solo caracteres'})
-
-            }
-
-            if (description.trim().length < 5 || description.trim().length > 255) {
-
-                return res.status(400).json({ message: 'Error: El campo description no puede estar vacio, minimo 5 caracteres, maximo 255'})
-            }
+            return res.status(400).json({ message: 'Error: La descripción debe tener entre 5 y 255 caracteres' })
 
         }
 
-        if (priority && !validPriority.includes(priority)) {
+        if (!validatePriority(priority)) {
 
-            return res.status(400).json({ message: 'Error: Las prioridades disponibles son low, medium, high'})
-
+            return res.status(400).json({ message: 'Error: Las prioridades disponibles son low, medium, high' })
+        
         }
 
-        if (status && !validStatus.includes(status)) {
-            console.log(status)
+        if (!validateStatus(status)) {
+
             return res.status(400).json({ message: 'Error: Los status disponibles son pending, in_progress, completed, incomplete'})
+
         }
 
-
-        if (typeof(id) !== "number" || !Number.isInteger(id) || id <= 0 ) {
-            console.log(id)
+        if (Number.isNaN(id) || !Number.isInteger(id) || id <= 0 ) {
+        
             return res.status(400).json({ message: 'Error: El id ingresado debe ser un número entero mayor a 0'})
         }
 
@@ -166,9 +125,7 @@ exports.updateTasks = async (req, res, next) => {
          return res.status(200).json(result)
 
     } catch (error) {
-        //console.error(error.message)
-
-        //return res.status(500).json({ message: 'Error al actualizar la tarea' })
+        
         return next(error)
     }
 }
@@ -194,9 +151,7 @@ exports.deleteTasks = async (req, res, next) => {
         return res.status(200).json({ message: 'Tarea eliminada correctamente', result })
 
     } catch (error) {
-        //console.log(error.message)
-
-        //return res.status(500).json( { message: 'Error: Ocurrio un problema inesperado'})
+    
         return next(error)
     }
 
