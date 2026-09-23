@@ -11,9 +11,7 @@ async function getTasksService (status) {
         const result = await pool.query('SELECT * FROM tasks WHERE status = $1', [status])
         return result.rows
         
-
     } catch (error) {
-
         throw error
     }
 
@@ -24,11 +22,9 @@ async function createTasksService (name, description, duration_days, dueDate, pr
     try {
         const result = await pool.query('INSERT INTO tasks (name, description, duration_days, due_date, priority) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [name, description, duration_days, dueDate, priority])
-
         return result.rows[0]
 
     } catch (error) {
-
         throw error
     }
 
@@ -40,45 +36,41 @@ async function statusUpdate (){
         //Pendiente actualizar para devolver solo el registro actualizado
 
         const result = await pool.query(`UPDATE tasks SET status = 'incomplete' WHERE due_date < CURRENT_TIMESTAMP AND status != 'completed' RETURNING *`)
-
         return result.rows
 
     } catch (error) {
         console.error(error)
         console.error('Error al actualizar los estados')
+        throw error
     }
     
 }
 
-async function updateTasksStatus (id, name, description, priority, status){
+async function updateTasksStatus (id, campos){
     try {
-
+        const { name, description, priority, status } = campos
         const fields = []
         const values = []
 
         if (name !== undefined && name!== null) {
-
             fields.push(`name = $${values.length + 1}`)
             values.push(name)
 
         }
 
         if (description !== undefined && description!== null) {
-
             fields.push(`description = $${values.length + 1}`)
             values.push(description)
 
         }
 
         if (priority !== undefined && priority!== null) {
-
             fields.push(`priority = $${values.length + 1}`)
             values.push(priority)
 
         }
     
         if (status !== undefined && status!== null) {
-
             fields.push(`status = $${values.length + 1}`)
             values.push(status)
 
@@ -87,28 +79,22 @@ async function updateTasksStatus (id, name, description, priority, status){
         values.push(id)
 
         const query = (`UPDATE tasks SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING *`)
-
         const result = await pool.query(query, values)
-
         return result.rows[0]
 
     } catch (error){
-
         throw error
     }
     
 }
 
 async function deleteTaskId(id) {
-    try {
-        
+    try {        
         const result = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id])
-
         return result.rows[0]
 
 
     } catch (error){
-
         throw error
 
     }
