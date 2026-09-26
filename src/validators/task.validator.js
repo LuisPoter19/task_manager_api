@@ -91,22 +91,35 @@ function validateStatus(status) {
 
 }
 
-module.exports = { validateName, validateDescription, validatePriority, validateStatus, validateDurationDays }
+function validateStatusTransition(currentStatus, newStatus) {
+    const pendingStatus = ["in_progress", "completed"]
+    const inProgressStatus = ["completed"]
+    const incompleteStatus = ["in_progress", "completed"]
 
-console.log(validateName("Tarea de Node"))
-console.log(validateName("ab"))
-console.log(validateName(undefined, true))
+    if (currentStatus === "completed") {
+        return false
+    }
 
-console.log(validateDescription("Practicar Express"))
-console.log(validateDescription("abc"))
-console.log(validateDescription(undefined, true))
+    if (currentStatus === "pending") {       
+        if (pendingStatus.includes(newStatus)) {
+            return true
+       }
+    }
 
-console.log(validateDurationDays(5, true))
-console.log(validateDurationDays(0, true))
-console.log(validateDurationDays(2.5, true))
+    if (currentStatus === "in_progress") {      
+        if (inProgressStatus.includes(newStatus)) {
+            return true
+        }
+    }
 
-console.log(validatePriority("high", true))
-console.log(validatePriority("urgent", true))
+     if (currentStatus === "incomplete") {      
+        if (incompleteStatus.includes(newStatus)) {
+            return true
+        }
+    }
 
-console.log(validateStatus("completed"))
-console.log(validateStatus("cancelled"))
+    return false
+}
+
+module.exports = { validateName, validateDescription, validatePriority, validateStatus, validateDurationDays, validateStatusTransition }
+

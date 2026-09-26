@@ -1,16 +1,23 @@
 const { statusUpdate } = require('../services/tasks.service')
 
 setInterval(async () => {
-    const result = await statusUpdate()
 
-    if (result.length > 0) {
+    try {
+        const result = await statusUpdate()
 
-        console.log('Tareas actualizadas:', result)
+        if (result.length > 0) {
 
-    } else {
-        console.log('No hay status actualizados')
+            console.log('Tareas actualizadas:', result)
+
+        } else {
+            console.log('No hay status actualizados')
+        }
+
+    } catch(error) {
+
+        console.error('Error al iniciar el Job', error.message)
     }
-
+    
 }, 10*1000)
 
 
