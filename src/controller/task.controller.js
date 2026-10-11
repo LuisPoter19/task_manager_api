@@ -1,4 +1,4 @@
-const {getTasksService, createTasksService, updateTasksStatus, deleteTaskId} = require('../services/tasks.service') 
+const {getTasksService, createTasksService, updateTasksStatus, deleteTaskId, testTransaction} = require('../services/tasks.service') 
 const { validateName, validateDescription, validateDurationDays, validatePriority , validateStatus } = require('../validators/task.validator')
 
 exports.getTasks = async (req, res, next) => {
@@ -49,12 +49,15 @@ exports.createTasks = async (req, res, next) => {
         
         }
 
+        const normalizeName = name.trim()
+        const normalizeDescription = description.trim()
+
         const createdAt = new Date()
         const dueDate = new Date(createdAt)
 
         dueDate.setDate(createdAt.getDate() + duration_days)
 
-        const result = await createTasksService(name, description, duration_days, dueDate, priority)
+        const result = await createTasksService(normalizeName, normalizeDescription, duration_days, dueDate, priority)
         return res.status(201).json(result)
 
     }catch(error) {    
@@ -98,11 +101,14 @@ exports.updateTasks = async (req, res, next) => {
             return res.status(400).json({ message: 'Error: El id ingresado debe ser un número entero mayor a 0'})
         }
 
-        const campos = {name, description, priority, status}
+        const normalizeName = name !== undefined ? name.trim() : undefined
+        const normalizeDescription = description !== undefined ? description.trim() : undefined
 
-        //const result = await updateTasksStatus(id, name, description, priority, status)
+        const campos = {name: normalizeName, description: normalizeDescription, priority, status}
 
         const result = await updateTasksStatus(id, campos)
+
+       // const result = await testTransaction(id)
 
         if (!result) {
             return res.status(404).json({ message: 'Tarea no encontrada'})      

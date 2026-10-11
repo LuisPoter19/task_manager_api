@@ -59,7 +59,150 @@ async function updateTasksStatus (id, campos){
             values.push(priority)
 
         }
+        
+        const client = await pool.connect()
+
+        try {
+            await client.query('BEGIN')
+
+            if (status !== undefined && status!== null) {
+
+                const statusBD = await client.query('SELECT status FROM tasks WHERE id = $1 FOR UPDATE', [id])
+
+                if (statusBD.rows.length === 0) {
+                    await client.query('COMMIT')
+                    return undefined
+                }
+
+                const currentStatus = statusBD.rows[0].status
+
+                if (validateStatusTransition(currentStatus, status)) {
+                    fields.push(`status = $${values.length + 1}`)
+                    values.push(status)
+                } else {
+                    const error = new Error('Cambio de estado no permitido')
+                    error.statusCode = 400
+                    throw error               
+                }  
+            }
+
+            values.push(id)
+
+            const query = (`UPDATE tasks SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING *`)
+        
+            const result = await client.query(query, values)
+
+            await client.query('COMMIT')
+
+            return result.rows[0]
+
+        } catch (error) {
+            try {
+                await client.query('ROLLBACK')
+
+            }catch (rollbackError){
+                console.error('Error al ejecutar ROLLBACK:', rollbackError.message)
+            }
+            
+            throw error
+
+        } finally {
+            client.release()
+        }
     
+}
+
+async function deleteTaskId(id) { 
+
+        const result = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id])
+        return result.rows[0]
+
+}
+
+async function testTransaction(id) {
+
+    const client = await pool.connect()
+
+    try {
+
+        await client.query('BEGIN')
+
+        const statusBD = 'SELECT status FROM tasks WHERE id = $1'
+        const result = await client.query(statusBD, [id])
+
+        await client.query('COMMIT')
+
+        return result.rows
+
+    } catch (error) {
+
+        await client.query('ROLLBACK')
+
+        throw error
+
+    } finally {
+
+        client.release()
+    }
+    
+}
+
+
+module.exports = { getTasksService, createTasksService, statusUpdate, updateTasksStatus, deleteTaskId, testTransaction }
+
+
+
+//VERSIÓN 1 updateTasksStatus
+/*async function updateTasksStatus (id, name, description, priority, status){
+    try {
+
+        console.log(id, name, description, priority, status)
+
+        const result = await pool.query('UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *', [status, id])
+
+        return result.rows[0]
+
+    } catch (error){
+
+        throw error
+    }
+    
+}*/
+
+//VERSIÓN 2 updateTasksStatus
+/*async function updateTasksStatus (id, campos){
+ 
+        const { name, description, priority, status } = campos
+        const fields = []
+        const values = []
+
+        if (name === undefined && description === undefined && priority === undefined && status === undefined) {
+            const error = new Error('No hay campos para actualizar')
+            error.statusCode = 400
+            throw error
+
+        }
+
+        if (name !== undefined && name!== null) {
+            fields.push(`name = $${values.length + 1}`)
+            values.push(name)
+
+        }
+
+        if (description !== undefined && description!== null) {
+            fields.push(`description = $${values.length + 1}`)
+            values.push(description)
+
+        }
+
+        if (priority !== undefined && priority!== null) {
+            fields.push(`priority = $${values.length + 1}`)
+            values.push(priority)
+
+        }
+        
+     
+
         if (status !== undefined && status!== null) {
             const statusBD = await pool.query('SELECT status FROM tasks WHERE id = $1', [id])
 
@@ -92,26 +235,4 @@ async function deleteTaskId(id) {
         const result = await pool.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id])
         return result.rows[0]
 
-}
-
-
-module.exports = { getTasksService, createTasksService, statusUpdate, updateTasksStatus, deleteTaskId }
-
-
-
-//VERSIÓN 1 updateTasksStatus
-/*async function updateTasksStatus (id, name, description, priority, status){
-    try {
-
-        console.log(id, name, description, priority, status)
-
-        const result = await pool.query('UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *', [status, id])
-
-        return result.rows[0]
-
-    } catch (error){
-
-        throw error
-    }
-    
 }*/

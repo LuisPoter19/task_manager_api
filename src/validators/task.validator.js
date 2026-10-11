@@ -66,12 +66,7 @@ function validatePriority(priority, required = false) {
 
     }
 
-    if (!validPriorities.includes(priority)) {
-        return false
-
-    }
-
-    return true
+    return validPriorities.includes(priority)
 }
 
 function validateStatus(status) {
@@ -82,43 +77,23 @@ function validateStatus(status) {
 
     }
 
-    if (!validStatus.includes(status)) {
-        return false
-
-    }
-
-    return true
-
+    return validStatus.includes(status)
 }
 
 function validateStatusTransition(currentStatus, newStatus) {
-    const pendingStatus = ["in_progress", "completed"]
-    const inProgressStatus = ["completed"]
-    const incompleteStatus = ["in_progress", "completed"]
+    const statusTransitions = {
+        pending: ["in_progress", "completed"],
+        in_progress: ["completed"],
+        completed: [],
+        incomplete: ["in_progress", "completed"]
+    }
 
-    if (currentStatus === "completed") {
+    if (!statusTransitions[currentStatus]) {
         return false
     }
 
-    if (currentStatus === "pending") {       
-        if (pendingStatus.includes(newStatus)) {
-            return true
-       }
-    }
-
-    if (currentStatus === "in_progress") {      
-        if (inProgressStatus.includes(newStatus)) {
-            return true
-        }
-    }
-
-     if (currentStatus === "incomplete") {      
-        if (incompleteStatus.includes(newStatus)) {
-            return true
-        }
-    }
-
-    return false
+    return statusTransitions[currentStatus].includes(newStatus)
+        
 }
 
 module.exports = { validateName, validateDescription, validatePriority, validateStatus, validateDurationDays, validateStatusTransition }
