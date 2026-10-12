@@ -5,12 +5,26 @@ async function getTasksService (status, limit, offset) {
 
     if (status === undefined) {
             const result = await pool.query('SELECT * FROM tasks ORDER BY id ASC LIMIT $1 OFFSET $2', [limit, offset])
-            return result.rows
+            const resultCount = await pool.query('SELECT COUNT(*) AS cantidad FROM tasks')
 
+
+            const total = Number(resultCount.rows[0].cantidad)
+
+            return {
+                data: result.rows,
+                total
+            }            
         } 
 
         const result = await pool.query('SELECT * FROM tasks WHERE status = $1 ORDER BY id ASC LIMIT $2 OFFSET $3', [status, limit, offset])
-        return result.rows
+        const resultCount = await pool.query('SELECT COUNT(*) AS cantidad FROM tasks WHERE status = $1', [status])
+
+        const total = Number(resultCount.rows[0].cantidad)
+
+        return {
+            data: result.rows,
+            total
+        }
         
 }
 

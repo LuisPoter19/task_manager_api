@@ -16,7 +16,9 @@ exports.getTasks = async (req, res, next) => {
 
         if (status === undefined ) {
             const result = await getTasksService(status, limit, offset)
-            return res.status(200).json(result)
+            const totalPages = Math.ceil(result.total / limit)
+            return res.status(200).json({data: result.data, pagination: {page, limit, total:result.total, totalPages}})
+            //return res.status(200).json(result)
         }   
 
         if (!validateStatus(status)) {
@@ -25,7 +27,9 @@ exports.getTasks = async (req, res, next) => {
         } 
 
         const result = await getTasksService(status, limit, offset)
-        return res.status(200).json(result)
+        const totalPages = Math.ceil(result.total / limit)
+        return res.status(200).json({data: result.data, pagination: {page, limit, total: result.total, totalPages}})
+        //return res.status(200).json(result)
 
     }catch(error) {
         return next(error)
