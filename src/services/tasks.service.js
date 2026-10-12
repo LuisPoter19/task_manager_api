@@ -1,15 +1,15 @@
 const pool = require('../config/db')
 const { validateStatusTransition } = require('../validators/task.validator')
 
-async function getTasksService (status) {
+async function getTasksService (status, limit, offset) {
 
     if (status === undefined) {
-            const result = await pool.query('SELECT * FROM tasks')
+            const result = await pool.query('SELECT * FROM tasks ORDER BY id ASC LIMIT $1 OFFSET $2', [limit, offset])
             return result.rows
 
         } 
 
-        const result = await pool.query('SELECT * FROM tasks WHERE status = $1', [status])
+        const result = await pool.query('SELECT * FROM tasks WHERE status = $1 ORDER BY id ASC LIMIT $2 OFFSET $3', [status, limit, offset])
         return result.rows
         
 }

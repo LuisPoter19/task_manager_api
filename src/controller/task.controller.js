@@ -3,19 +3,28 @@ const { validateName, validateDescription, validateDurationDays, validatePriorit
 
 exports.getTasks = async (req, res, next) => {
     try {
+        const limit = Number(req.query.limit ?? 10)
+        const page = Number(req.query.page ?? 1)
         const status = req.query.status
 
-        if (status === undefined) {
-            const result = await getTasksService()
-            return res.status(200).json(result)
+        const offset = (page - 1) * limit
+        
+        if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
+            return res.status(400).json({ message: 'Los valores ingresados para page y limit son invalidos'})
         }
+
+
+        if (status === undefined ) {
+            const result = await getTasksService(status, limit, offset)
+            return res.status(200).json(result)
+        }   
 
         if (!validateStatus(status)) {
             return res.status(400).json({ message: 'Estado no válido. Los estados permitidos son pending, in_progress, completed e incomplete'})
 
         } 
 
-        const result = await getTasksService(status)
+        const result = await getTasksService(status, limit, offset)
         return res.status(200).json(result)
 
     }catch(error) {
@@ -247,6 +256,32 @@ exports.deleteTasks = async (req, res, next) => {
             message: 'Error al obtener las tareas'     })
 
         
+
+    }
+    
+}*/
+
+
+//SEGUNDA VERSIÓN DE GETTASKS
+/*exports.getTasks = async (req, res, next) => {
+    try {
+        const status = req.query.status
+
+        if (status === undefined) {
+            const result = await getTasksService()
+            return res.status(200).json(result)
+        }
+
+        if (!validateStatus(status)) {
+            return res.status(400).json({ message: 'Estado no válido. Los estados permitidos son pending, in_progress, completed e incomplete'})
+
+        } 
+
+        const result = await getTasksService(status)
+        return res.status(200).json(result)
+
+    }catch(error) {
+        return next(error)
 
     }
     
