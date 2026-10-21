@@ -2,30 +2,24 @@ const pool = require('../config/db')
 const { validateStatusTransition } = require('../validators/task.validator')
 
 async function getTasksService (status, limit, offset) {
+    let result
+    let resultCount
 
     if (status === undefined) {
-            const result = await pool.query('SELECT * FROM tasks ORDER BY id ASC LIMIT $1 OFFSET $2', [limit, offset])
-            const resultCount = await pool.query('SELECT COUNT(*) AS cantidad FROM tasks')
+        result = await pool.query('SELECT * FROM tasks ORDER BY id ASC LIMIT $1 OFFSET $2', [limit, offset])
+        resultCount = await pool.query('SELECT COUNT(*) AS cantidad FROM tasks')
 
+    } else {
+        result = await pool.query('SELECT * FROM tasks WHERE status = $1 ORDER BY id ASC LIMIT $2 OFFSET $3', [status, limit, offset])
+        resultCount = await pool.query('SELECT COUNT(*) AS cantidad FROM tasks WHERE status = $1', [status])
+    }
 
-            const total = Number(resultCount.rows[0].cantidad)
+    const total = Number(resultCount.rows[0].cantidad)
 
-            return {
-                data: result.rows,
-                total
-            }            
-        } 
-
-        const result = await pool.query('SELECT * FROM tasks WHERE status = $1 ORDER BY id ASC LIMIT $2 OFFSET $3', [status, limit, offset])
-        const resultCount = await pool.query('SELECT COUNT(*) AS cantidad FROM tasks WHERE status = $1', [status])
-
-        const total = Number(resultCount.rows[0].cantidad)
-
-        return {
-            data: result.rows,
-            total
-        }
-        
+    return {
+        data: result.rows,
+        total
+    }            
 }
 
 async function createTasksService (name, description, duration_days, dueDate, priority) {
@@ -38,7 +32,7 @@ async function createTasksService (name, description, duration_days, dueDate, pr
 
 async function statusUpdate (){
 
-        const result = await pool.query(`UPDATE tasks SET status = 'incomplete' WHERE due_date < CURRENT_TIMESTAMP AND status != 'completed' RETURNING *`)
+        const result = await pool.query(`UPDATE tasks SET status = 'incomplete' WHERE due_date < CURRENT_TIMESTAMP AND status NOT IN ('completed', 'incomplete') RETURNING *`)
         return result.rows
     
 }
@@ -74,9 +68,11 @@ async function updateTasksStatus (id, campos){
 
         }
         
-        const client = await pool.connect()
-
+        let client
+        
         try {
+            client = await pool.connect()
+
             await client.query('BEGIN')
 
             if (status !== undefined && status!== null) {
@@ -90,6 +86,10 @@ async function updateTasksStatus (id, campos){
 
                 const currentStatus = statusBD.rows[0].status
 
+                if (currentStatus === 'incomplete' && status === 'in_progress') {
+                    fields.push(`due_date = CURRENT_TIMESTAMP + (duration_days * INTERVAL '1 day')`)
+                }
+
                 if (validateStatusTransition(currentStatus, status)) {
                     fields.push(`status = $${values.length + 1}`)
                     values.push(status)
@@ -101,6 +101,13 @@ async function updateTasksStatus (id, campos){
             }
 
             values.push(id)
+
+            if (fields.length === 0) {
+                const error = new Error('No hay campos válidos para actualizar')
+                error.statusCode = 400
+                throw error
+
+            }
 
             const query = (`UPDATE tasks SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING *`)
         
@@ -121,9 +128,11 @@ async function updateTasksStatus (id, campos){
             throw error
 
         } finally {
-            client.release()
-        }
-    
+            if (client){
+                client.release()
+                
+            }            
+        }    
 }
 
 async function deleteTaskId(id) { 

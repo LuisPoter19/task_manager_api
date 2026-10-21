@@ -13,29 +13,18 @@ exports.getTasks = async (req, res, next) => {
             return res.status(400).json({ message: 'Los valores ingresados para page y limit son invalidos'})
         }
 
-
-        if (status === undefined ) {
-            const result = await getTasksService(status, limit, offset)
-            const totalPages = Math.ceil(result.total / limit)
-            return res.status(200).json({data: result.data, pagination: {page, limit, total:result.total, totalPages}})
-            //return res.status(200).json(result)
-        }   
-
         if (!validateStatus(status)) {
             return res.status(400).json({ message: 'Estado no válido. Los estados permitidos son pending, in_progress, completed e incomplete'})
-
         } 
 
         const result = await getTasksService(status, limit, offset)
         const totalPages = Math.ceil(result.total / limit)
         return res.status(200).json({data: result.data, pagination: {page, limit, total: result.total, totalPages}})
-        //return res.status(200).json(result)
+        
 
     }catch(error) {
         return next(error)
-
-    }
-    
+    }    
 } 
 
 exports.createTasks = async (req, res, next) => {
@@ -85,6 +74,10 @@ exports.updateTasks = async (req, res, next) => {
         const id = Number(req.params.id)
         const {name, description, priority, status} = req.body
 
+        if (Number.isNaN(id) || !Number.isInteger(id) || id <= 0 ) {        
+            return res.status(400).json({ message: 'Error: El id ingresado debe ser un número entero mayor a 0'})
+        }
+
         if (name === undefined && description === undefined && priority === undefined && status === undefined) {
             return res.status(400).json({ message: 'Error: No hay ningún campo para modificar' })
 
@@ -108,11 +101,7 @@ exports.updateTasks = async (req, res, next) => {
         if (!validateStatus(status)) {
             return res.status(400).json({ message: 'Error: Los status disponibles son pending, in_progress, completed, incomplete'})
 
-        }
-
-        if (Number.isNaN(id) || !Number.isInteger(id) || id <= 0 ) {        
-            return res.status(400).json({ message: 'Error: El id ingresado debe ser un número entero mayor a 0'})
-        }
+        }        
 
         const normalizeName = name !== undefined ? name.trim() : undefined
         const normalizeDescription = description !== undefined ? description.trim() : undefined
@@ -120,8 +109,6 @@ exports.updateTasks = async (req, res, next) => {
         const campos = {name: normalizeName, description: normalizeDescription, priority, status}
 
         const result = await updateTasksStatus(id, campos)
-
-       // const result = await testTransaction(id)
 
         if (!result) {
             return res.status(404).json({ message: 'Tarea no encontrada'})      

@@ -35,7 +35,7 @@ require('dotenv').config()
 const express = require('express')
 const app = express()
 const taskRouter = require('./routes/task.routes')
-const pool = require('../src/config/db')
+//const pool = require('../src/config/db')
 const errorHandler = require('../src/middleware/error.middleware')
 
 
@@ -43,9 +43,11 @@ app.use(express.json())
 app.use('/api/tasks', taskRouter)
 app.use(errorHandler)
 
-//require('./jobs/taskstatus.job')
+module.exports = app
 
-const PORT = process.env.PORT || 3030
+
+
+/*const PORT = process.env.PORT || 3030
 
 async function connectDB() {
     try {
@@ -62,14 +64,16 @@ async function connectDB() {
 async function startServer() {
     const connected = await connectDB()
     if (connected){
-    app.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`)
-    console.log(`http://localhost:${PORT}`)
+        require('./jobs/taskstatus.job')
+
+        app.listen(PORT, () => {
+            console.log(`Servidor corriendo en puerto ${PORT}`)
+            console.log(`http://localhost:${PORT}`)
     })
     } 
 } 
 
-startServer()
+startServer()*/
 
 
 /*app.get('/', (req, res) => {
