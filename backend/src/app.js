@@ -37,8 +37,9 @@ const app = express()
 const taskRouter = require('./routes/task.routes')
 //const pool = require('../src/config/db')
 const errorHandler = require('../src/middleware/error.middleware')
+const cors = require('cors')
 
-
+app.use(cors({ origin: 'http://localhost:5173' }))
 app.use(express.json())
 app.use('/api/tasks', taskRouter)
 app.use(errorHandler)
